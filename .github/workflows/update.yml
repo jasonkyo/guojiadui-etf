@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: pip install pandas akshare
+      - run: pip install -r requirements.txt
       - run: python build.py
       - name: 提交更新
         run: |
