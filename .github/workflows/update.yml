@@ -1,0 +1,37 @@
+name: 收盘后更新网页
+
+on:
+  schedule:
+    # 北京时间 周一到周五 15:25 和 16:40（UTC 07:25 / 08:40）各跑一次；第二次兜底，防止 GitHub 定时任务延迟或数据还没更新
+    - cron: "25 7 * * 1-5"
+    - cron: "40 8 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Shanghai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install pandas akshare
+      - run: python build.py
+      - name: 提交更新
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html data
+          if git diff --cached --quiet; then echo "没有变化"; exit 0; fi
+          git commit -m "数据更新 $(date '+%Y-%m-%d %H:%M')"
+          git push
